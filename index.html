@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRUM Voice</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #10141c;
+  color: white;
+  font-family: "Meiryo UI", sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+}
+
+.phone {
+  width: 100%;
+  max-width: 390px;
+  min-height: 650px;
+  background: #202733;
+  border: 1px solid #435064;
+  border-radius: 28px;
+  padding: 22px;
+  box-shadow: 0 15px 50px #0009;
+}
+
+.header {
+  text-align: center;
+  border-bottom: 1px solid #465365;
+  padding-bottom: 18px;
+}
+
+.logo {
+  font-size: 27px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  color: #72d6ff;
+}
+
+.subtitle {
+  font-size: 11px;
+  color: #9eabbc;
+  margin-top: 6px;
+}
+
+.status {
+  margin: 20px 0;
+  padding: 12px;
+  background: #17202b;
+  border-radius: 10px;
+  color: #69e7a1;
+  font-size: 13px;
+}
+
+textarea {
+  width: 100%;
+  height: 110px;
+  resize: vertical;
+  border: 1px solid #52657d;
+  border-radius: 12px;
+  background: #121a25;
+  color: white;
+  padding: 14px;
+  font-size: 17px;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: #54cfff;
+}
+
+button, select, input {
+  font-family: inherit;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 14px;
+}
+
+.speak {
+  width: 100%;
+  margin-top: 12px;
+  background: #168dcb;
+  color: white;
+  font-weight: bold;
+  font-size: 17px;
+}
+
+.stop {
+  width: 100%;
+  margin-top: 8px;
+  background: #384454;
+  color: white;
+}
+
+h3 {
+  font-size: 14px;
+  color: #83d8ff;
+  margin-top: 25px;
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.presets button {
+  background: #303d4e;
+  color: white;
+  border: 1px solid #46566b;
+}
+
+.presets button:active {
+  background: #168dcb;
+}
+
+.settings {
+  background: #17202b;
+  padding: 14px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.settings label {
+  display: block;
+  font-size: 12px;
+  margin: 12px 0 6px;
+  color: #aebdce;
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  background: #263345;
+  color: white;
+  border: 1px solid #46566b;
+  border-radius: 8px;
+}
+
+input[type=range] {
+  width: 100%;
+  accent-color: #36b9ff;
+}
+
+.footer {
+  text-align: center;
+  color: #728096;
+  font-size: 10px;
+  margin-top: 22px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="phone">
+
+  <div class="header">
+    <div class="logo">DRUM VOICE</div>
+    <div class="subtitle">VOICE COMMUNICATION SYSTEM</div>
+  </div>
+
+  <div class="status" id="status">
+    ● SYSTEM READY
+  </div>
+
+  <h3>MESSAGE INPUT</h3>
+
+  <textarea id="message"
+    placeholder="伝えたい言葉を入力してください..."></textarea>
+
+  <button class="speak" onclick="speak()">
+    ▶ 話す
+  </button>
+
+  <button class="stop" onclick="stopVoice()">
+    ■ 停止
+  </button>
+
+  <h3>QUICK MESSAGE</h3>
+
+  <div class="presets">
+    <button onclick="preset('私はドラムです。よろしくね。')">私はドラムです</button>
+    <button onclick="preset('了解したよ。')">了解したよ</button>
+    <button onclick="preset('ありがとう！')">ありがとう</button>
+    <button onclick="preset('もうすぐ着くよ。')">もうすぐ着くよ</button>
+    <button onclick="preset('超危険！')">超危険！</button>
+    <button onclick="preset('大丈夫だよ。')">大丈夫だよ</button>
+    <button onclick="preset('野崎さんは？')">野崎さんは？</button>
+    <button onclick="preset('よろしくね！')">よろしくね</button>
+  </div>
+
+  <div class="settings">
+
+    <h3 style="margin-top:0">VOICE SETTINGS</h3>
+
+    <label>音声</label>
+    <select id="voice"></select>
+
+    <label>読み上げ速度：<span id="rateValue">1.0</span></label>
+    <input type="range" id="rate"
+      min="0.5" max="2" step="0.1" value="1">
+
+    <label>声の高さ：<span id="pitchValue">1.2</span></label>
+    <input type="range" id="pitch"
+      min="0.5" max="2" step="0.1" value="1.2">
+
+  </div>
+
+  <div class="footer">
+    DRUM VOICE SYSTEM · HTML EDITION
+  </div>
+
+</div>
+
+<script>
+const message = document.getElementById("message");
+const status = document.getElementById("status");
+const voiceSelect = document.getElementById("voice");
+
+let voices = [];
+
+function loadVoices() {
+  voices = speechSynthesis.getVoices();
+
+  voiceSelect.innerHTML = "";
+
+  const japaneseVoices = voices.filter(v =>
+    v.lang.toLowerCase().startsWith("ja")
+  );
+
+  const list = japaneseVoices.length
+    ? japaneseVoices
+    : voices;
+
+  list.forEach((voice, index) => {
+    const option = document.createElement("option");
+    option.value = voices.indexOf(voice);
+    option.textContent = voice.name + " (" + voice.lang + ")";
+    voiceSelect.appendChild(option);
+  });
+}
+
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speak() {
+  const text = message.value.trim();
+
+  if (!text) {
+    status.textContent = "● MESSAGE IS EMPTY";
+    return;
+  }
+
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+
+  utterance.lang = "ja-JP";
+  utterance.rate = Number(document.getElementById("rate").value);
+  utterance.pitch = Number(document.getElementById("pitch").value);
+
+  const selectedVoice = voices[Number(voiceSelect.value)];
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
+
+  utterance.onstart = () => {
+    status.textContent = "● SPEAKING...";
+  };
+
+  utterance.onend = () => {
+    status.textContent = "● SYSTEM READY";
+  };
+
+  utterance.onerror = () => {
+    status.textContent = "● VOICE ERROR";
+  };
+
+  speechSynthesis.speak(utterance);
+}
+
+function stopVoice() {
+  speechSynthesis.cancel();
+  status.textContent = "● STOPPED";
+}
+
+function preset(text) {
+  message.value = text;
+  speak();
+}
+
+document.getElementById("rate").oninput = function() {
+  document.getElementById("rateValue").textContent = this.value;
+};
+
+document.getElementById("pitch").oninput = function() {
+  document.getElementById("pitchValue").textContent = this.value;
+};
+
+message.addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    speak();
+  }
+});
+</script>
+
+</body>
+</html>
